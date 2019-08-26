@@ -4,7 +4,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -17,14 +19,25 @@ public class MainActivity extends AppCompatActivity {
 
     private Button start;
     private TextView text;
+    private EditText edit_insert;
+    private TextView tv_enter;
+    private WebSocket webSocket;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        start = (Button) findViewById(R.id.start);
-        text = (TextView) findViewById(R.id.text);
+        start = findViewById(R.id.start);
+        text = findViewById(R.id.text);
+        edit_insert = findViewById(R.id.edit_insert);
+        tv_enter = findViewById(R.id.tv_enter);
+        tv_enter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onEnter();
+            }
+        });
 
         start.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -35,11 +48,19 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void onEnter() {
+        if (webSocket != null) {
+            webSocket.send(edit_insert.getText().toString());
+        } else {
+            Toast.makeText(this, "未能初始化", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private final class EchoWebSocketListener extends WebSocketListener {
 
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
-
+            MainActivity.this.webSocket = webSocket;
             webSocket.send("hello world");
             webSocket.send("welcome");
             webSocket.send(ByteString.decodeHex("adef"));
@@ -88,7 +109,9 @@ public class MainActivity extends AppCompatActivity {
 
         EchoWebSocketListener listener = new EchoWebSocketListener();
         Request request = new Request.Builder()
-                .url("ws://192.168.0.32:8086/select")
+//                .url("ws://192.168.0.32:8086/select")
+//                .url("ws://172.16.2.65:8082")
+                .url("ws://172.16.2.65:8080/ws")
                 .build();
         OkHttpClient client = new OkHttpClient();
         client.newWebSocket(request, listener);
