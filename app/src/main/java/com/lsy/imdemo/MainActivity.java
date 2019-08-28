@@ -15,7 +15,7 @@ import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
 
     private Button start;
     private TextView text;
@@ -42,18 +42,45 @@ public class MainActivity extends AppCompatActivity {
         start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                connect();
+                connect(StrUtil.getRandomName(),StrUtil.getRandomId());
             }
         });
-
     }
 
+
+
+
+
+    /**
+     * 发送消息
+     */
     private void onEnter() {
         if (webSocket != null) {
-            webSocket.send(edit_insert.getText().toString());
+            boolean isSend = webSocket.send(edit_insert.getText().toString());
+            if (isSend) {
+                edit_insert.setText("");
+            } else {
+                showToast("链接已关闭");
+            }
         } else {
-            Toast.makeText(this, "未能初始化", Toast.LENGTH_SHORT).show();
+            showToast("初始化失败");
         }
+    }
+
+    private void connect(String name, String id) {
+
+        EchoWebSocketListener listener = new EchoWebSocketListener();
+        Request request = new Request.Builder()
+//                .url("ws://192.168.0.32:8086/select")
+//                .url("ws://172.16.2.65:8082")
+                .url("ws://172.16.2.65:8080/ws")
+                .addHeader("name", name)
+                .addHeader("id", id)
+                .build();
+        OkHttpClient client = new OkHttpClient();
+        client.newWebSocket(request, listener);
+
+//        client.dispatcher().executorService().shutdown();
     }
 
     private final class EchoWebSocketListener extends WebSocketListener {
@@ -61,9 +88,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
             MainActivity.this.webSocket = webSocket;
-            webSocket.send("hello world");
-            webSocket.send("welcome");
-            webSocket.send(ByteString.decodeHex("adef"));
+//            webSocket.send("connect_ok");
+//            webSocket.send("welcome");
+//            webSocket.send(ByteString.decodeHex("adef"));
 //            webSocket.close(1000, "再见");
         }
 
@@ -104,19 +131,4 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
-    private void connect() {
-
-        EchoWebSocketListener listener = new EchoWebSocketListener();
-        Request request = new Request.Builder()
-//                .url("ws://192.168.0.32:8086/select")
-//                .url("ws://172.16.2.65:8082")
-                .url("ws://172.16.2.65:8080/ws")
-                .build();
-        OkHttpClient client = new OkHttpClient();
-        client.newWebSocket(request, listener);
-
-//        client.dispatcher().executorService().shutdown();
-    }
-
 }
