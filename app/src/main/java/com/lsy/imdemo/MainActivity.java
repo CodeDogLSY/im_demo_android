@@ -1,12 +1,22 @@
 package com.lsy.imdemo;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.lsy.imdemo.bean.Data;
+import com.lsy.imdemo.bean.MsgBean;
+import com.lsy.imdemo.bean.UserBean;
+import com.zhy.view.flowlayout.FlowLayout;
+import com.zhy.view.flowlayout.TagAdapter;
+import com.zhy.view.flowlayout.TagFlowLayout;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -20,8 +30,11 @@ public class MainActivity extends BaseActivity {
     private Button start;
     private TextView text;
     private EditText edit_insert;
-    private TextView tv_enter;
+    private Button tv_enter;
     private WebSocket webSocket;
+    private TagFlowLayout mFlowLayout;
+    private TagAdapter mAdapter;
+    private List<UserBean> list = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +45,7 @@ public class MainActivity extends BaseActivity {
         text = findViewById(R.id.text);
         edit_insert = findViewById(R.id.edit_insert);
         tv_enter = findViewById(R.id.tv_enter);
+        mFlowLayout = findViewById(R.id.id_flowlayout);
         tv_enter.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -42,13 +56,23 @@ public class MainActivity extends BaseActivity {
         start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                connect(StrUtil.getRandomName(),StrUtil.getRandomId());
+                connect(StrUtil.getRandomName(), StrUtil.getRandomId());
             }
         });
+
+        mAdapter = new TagAdapter<UserBean>(list) {
+
+            @Override
+            public View getView(FlowLayout parent, int position, UserBean userBean) {
+                TextView tv = new TextView(parent.getContext());
+                tv.setText(userBean.name);
+                return tv;
+            }
+        };
+
+        mFlowLayout.setAdapter(mAdapter);
+
     }
-
-
-
 
 
     /**
@@ -56,7 +80,10 @@ public class MainActivity extends BaseActivity {
      */
     private void onEnter() {
         if (webSocket != null) {
-            boolean isSend = webSocket.send(edit_insert.getText().toString());
+            String content = edit_insert.getText().toString();
+            MsgBean msgBean = new MsgBean();
+            msgBean.content = content;
+            boolean isSend = webSocket.send(new Gson().toJson(msgBean));
             if (isSend) {
                 edit_insert.setText("");
             } else {
@@ -95,8 +122,13 @@ public class MainActivity extends BaseActivity {
         }
 
         @Override
-        public void onMessage(WebSocket webSocket, String text) {
-            output("onMessage: " + text);
+        public void onMessage(WebSocket webSocket, final String text) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    manageData(text);
+                }
+            });
         }
 
         @Override
@@ -118,6 +150,32 @@ public class MainActivity extends BaseActivity {
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             output("onFailure: " + t.getMessage());
+        }
+    }
+
+    /**
+     * 处理数据
+     *
+     * @param text
+     */
+    private void manageData(String text) {
+        Data data = new Gson().fromJson(text, Data.class);
+        if (data != null && data.data_content != null) {
+            String content = data.data_content.toString();
+            switch (data.data_type) {
+                case 1:
+                    MsgBean msgBean = new Gson().fromJson(content, MsgBean.class);
+                    output(String.format("%s 说：%s", msgBean.from_name, msgBean.content));
+                    break;
+                case 2:
+                    List<UserBean> listData = new Gson().fromJson(content, new TypeToken<List<UserBean>>() {
+                    }.getType());
+                    list.clear();
+                    list.addAll(listData);
+                    mAdapter.notifyDataChanged();
+                    break;
+                default:
+            }
         }
     }
 
