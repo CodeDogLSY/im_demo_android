@@ -1,6 +1,8 @@
 package com.lsy.imdemo;
 
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,7 +18,9 @@ import com.zhy.view.flowlayout.TagAdapter;
 import com.zhy.view.flowlayout.TagFlowLayout;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -35,11 +39,15 @@ public class MainActivity extends BaseActivity {
     private TagFlowLayout mFlowLayout;
     private TagAdapter mAdapter;
     private List<UserBean> list = new ArrayList<>();
+    private LayoutInflater mInflater;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mInflater = LayoutInflater.from(this);
 
         start = findViewById(R.id.start);
         text = findViewById(R.id.text);
@@ -64,7 +72,8 @@ public class MainActivity extends BaseActivity {
 
             @Override
             public View getView(FlowLayout parent, int position, UserBean userBean) {
-                TextView tv = new TextView(parent.getContext());
+                TextView tv = (TextView) mInflater.inflate(R.layout.tv,
+                        mFlowLayout, false);
                 tv.setText(userBean.name);
                 return tv;
             }
@@ -81,8 +90,15 @@ public class MainActivity extends BaseActivity {
     private void onEnter() {
         if (webSocket != null) {
             String content = edit_insert.getText().toString();
+            Set<Integer> select = mFlowLayout.getSelectedList();
+
             MsgBean msgBean = new MsgBean();
             msgBean.content = content;
+            if (select.iterator().hasNext()) {
+                UserBean userBean = list.get(select.iterator().next());
+                msgBean.to_id = userBean.id;
+                msgBean.to_name = userBean.name;
+            }
             boolean isSend = webSocket.send(new Gson().toJson(msgBean));
             if (isSend) {
                 edit_insert.setText("");
@@ -165,7 +181,12 @@ public class MainActivity extends BaseActivity {
             switch (data.data_type) {
                 case 1:
                     MsgBean msgBean = new Gson().fromJson(content, MsgBean.class);
-                    output(String.format("%s 说：%s", msgBean.from_name, msgBean.content));
+                    if (TextUtils.isEmpty(msgBean.to_id)){
+                        output(String.format("%s 说：%s", msgBean.from_name, msgBean.content));
+                    }else {
+                        output(String.format("%s 对你说：%s", msgBean.from_name, msgBean.content));
+                    }
+
                     break;
                 case 2:
                     List<UserBean> listData = new Gson().fromJson(content, new TypeToken<List<UserBean>>() {
