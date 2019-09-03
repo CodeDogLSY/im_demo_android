@@ -42,6 +42,8 @@ public class MainActivity extends BaseActivity {
     private LayoutInflater mInflater;
 
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -116,7 +118,8 @@ public class MainActivity extends BaseActivity {
         Request request = new Request.Builder()
 //                .url("ws://192.168.0.32:8086/select")
 //                .url("ws://172.16.2.65:8082")
-                .url("ws://172.16.2.65:8080/ws")
+//                .url("ws://172.16.2.65:9080/ws")
+                .url("ws://47.52.78.196:9080/ws")
                 .addHeader("name", name)
                 .addHeader("id", id)
                 .build();
