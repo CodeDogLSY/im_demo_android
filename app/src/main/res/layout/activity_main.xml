@@ -5,10 +5,30 @@
     android:orientation="vertical">
 
     <TextView
-        android:id="@+id/text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/tv_name"
+        android:background="#dddddd"
+        android:text="当前用户："/>
+
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <Button
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:layout_alignParentEnd="true"
+            android:text="clear"
+            android:id="@+id/btn_clear" />
+
+    </RelativeLayout>
 
     <com.zhy.view.flowlayout.TagFlowLayout
         android:id="@+id/id_flowlayout"

@@ -31,15 +31,14 @@ import okio.ByteString;
 public class MainActivity extends BaseActivity {
 
     private Button start;
-    private TextView text;
+    private TextView text, tv_name;
     private EditText edit_insert;
-    private Button tv_enter;
+    private Button tv_enter, btn_clear;
     private WebSocket mWebSocket;
     private TagFlowLayout mFlowLayout;
     private TagAdapter mAdapter;
     private List<UserBean> list = new ArrayList<>();
     private LayoutInflater mInflater;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,8 +49,10 @@ public class MainActivity extends BaseActivity {
 
         start = findViewById(R.id.start);
         text = findViewById(R.id.text);
+        tv_name = findViewById(R.id.tv_name);
         edit_insert = findViewById(R.id.edit_insert);
         tv_enter = findViewById(R.id.tv_enter);
+        btn_clear = findViewById(R.id.btn_clear);
         mFlowLayout = findViewById(R.id.id_flowlayout);
         tv_enter.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -63,7 +64,16 @@ public class MainActivity extends BaseActivity {
         start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                connect(StrUtil.getRandomName(), StrUtil.getRandomId());
+                String name = StrUtil.getRandomName();
+                tv_name.setText(String.format("当前用户:%s", name));
+                connect(name, StrUtil.getRandomId());
+            }
+        });
+
+        btn_clear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                text.setText("");
             }
         });
 
@@ -82,6 +92,13 @@ public class MainActivity extends BaseActivity {
 
     }
 
+    @Override
+    protected void onDestroy() {
+        if (mWebSocket != null) {
+            mWebSocket.close(50, "关闭");
+        }
+        super.onDestroy();
+    }
 
     /**
      * 发送消息
@@ -89,6 +106,10 @@ public class MainActivity extends BaseActivity {
     private void onEnter() {
         if (mWebSocket != null) {
             String content = edit_insert.getText().toString();
+            if (TextUtils.isEmpty(content)) {
+                showToast("发送内容不能为空");
+                return;
+            }
             Set<Integer> select = mFlowLayout.getSelectedList();
 
             MsgBean msgBean = new MsgBean();
@@ -162,7 +183,7 @@ public class MainActivity extends BaseActivity {
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             output("onFailure: " + t.getMessage());
-            if(mWebSocket!=null){
+            if (mWebSocket != null) {
                 mWebSocket.close(1000, "再见");
             }
         }
