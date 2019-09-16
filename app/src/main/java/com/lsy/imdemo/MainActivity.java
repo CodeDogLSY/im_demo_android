@@ -126,7 +126,7 @@ public class MainActivity extends BaseActivity {
                 showToast("发送失败，链接失效");
             }
         } else {
-            showToast("初始化失败");
+            showToast("链接未初始化");
         }
     }
 
@@ -152,6 +152,12 @@ public class MainActivity extends BaseActivity {
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
             MainActivity.this.mWebSocket = webSocket;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    start.setEnabled(false);
+                }
+            });
         }
 
         @Override
@@ -178,6 +184,12 @@ public class MainActivity extends BaseActivity {
         public void onClosed(WebSocket webSocket, int code, String reason) {
             output("onClosed: " + code + "/" + reason);
             mWebSocket = null;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    start.setEnabled(true);
+                }
+            });
         }
 
         @Override
@@ -186,6 +198,12 @@ public class MainActivity extends BaseActivity {
             if (mWebSocket != null) {
                 mWebSocket.close(1000, "再见");
             }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    start.setEnabled(true);
+                }
+            });
         }
     }
 
