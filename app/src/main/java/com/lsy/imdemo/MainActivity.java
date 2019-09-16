@@ -18,7 +18,6 @@ import com.zhy.view.flowlayout.TagAdapter;
 import com.zhy.view.flowlayout.TagFlowLayout;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -35,13 +34,11 @@ public class MainActivity extends BaseActivity {
     private TextView text;
     private EditText edit_insert;
     private Button tv_enter;
-    private WebSocket webSocket;
+    private WebSocket mWebSocket;
     private TagFlowLayout mFlowLayout;
     private TagAdapter mAdapter;
     private List<UserBean> list = new ArrayList<>();
     private LayoutInflater mInflater;
-
-
 
 
     @Override
@@ -90,7 +87,7 @@ public class MainActivity extends BaseActivity {
      * 发送消息
      */
     private void onEnter() {
-        if (webSocket != null) {
+        if (mWebSocket != null) {
             String content = edit_insert.getText().toString();
             Set<Integer> select = mFlowLayout.getSelectedList();
 
@@ -98,14 +95,14 @@ public class MainActivity extends BaseActivity {
             msgBean.content = content;
             if (select.iterator().hasNext()) {
                 UserBean userBean = list.get(select.iterator().next());
-                msgBean.to_id = userBean.id;
-                msgBean.to_name = userBean.name;
+                msgBean.toid = userBean.id;
+                msgBean.toname = userBean.name;
             }
-            boolean isSend = webSocket.send(new Gson().toJson(msgBean));
+            boolean isSend = mWebSocket.send(new Gson().toJson(msgBean));
             if (isSend) {
                 edit_insert.setText("");
             } else {
-                showToast("链接已关闭");
+                showToast("发送失败，链接失效");
             }
         } else {
             showToast("初始化失败");
@@ -118,8 +115,8 @@ public class MainActivity extends BaseActivity {
         Request request = new Request.Builder()
 //                .url("ws://192.168.0.32:8086/select")
 //                .url("ws://172.16.2.65:8082")
-//                .url("ws://172.16.2.65:9080/ws")
-                .url("ws://47.52.78.196:9080/ws")
+                .url("ws://172.16.2.65:9080/ws")
+//                .url("ws://47.52.78.196:9080/ws")
                 .addHeader("name", name)
                 .addHeader("id", id)
                 .build();
@@ -133,11 +130,7 @@ public class MainActivity extends BaseActivity {
 
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
-            MainActivity.this.webSocket = webSocket;
-//            webSocket.send("connect_ok");
-//            webSocket.send("welcome");
-//            webSocket.send(ByteString.decodeHex("adef"));
-//            webSocket.close(1000, "再见");
+            MainActivity.this.mWebSocket = webSocket;
         }
 
         @Override
@@ -157,18 +150,21 @@ public class MainActivity extends BaseActivity {
 
         @Override
         public void onClosing(WebSocket webSocket, int code, String reason) {
-            webSocket.close(1000, null);
             output("onClosing: " + code + "/" + reason);
         }
 
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
             output("onClosed: " + code + "/" + reason);
+            mWebSocket = null;
         }
 
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             output("onFailure: " + t.getMessage());
+            if(mWebSocket!=null){
+                mWebSocket.close(1000, "再见");
+            }
         }
     }
 
@@ -179,15 +175,15 @@ public class MainActivity extends BaseActivity {
      */
     private void manageData(String text) {
         Data data = new Gson().fromJson(text, Data.class);
-        if (data != null && data.data_content != null) {
-            String content = data.data_content.toString();
-            switch (data.data_type) {
+        if (data != null && data.datacontent != null) {
+            String content = data.datacontent.toString();
+            switch (data.datatype) {
                 case 1:
                     MsgBean msgBean = new Gson().fromJson(content, MsgBean.class);
-                    if (TextUtils.isEmpty(msgBean.to_id)){
-                        output(String.format("%s 说：%s", msgBean.from_name, msgBean.content));
-                    }else {
-                        output(String.format("%s 对你说：%s", msgBean.from_name, msgBean.content));
+                    if (TextUtils.isEmpty(msgBean.toid)) {
+                        output(String.format("%s 说：%s", msgBean.fromname, msgBean.content));
+                    } else {
+                        output(String.format("%s 对你说：%s", msgBean.fromname, msgBean.content));
                     }
 
                     break;
@@ -213,4 +209,5 @@ public class MainActivity extends BaseActivity {
             }
         });
     }
+
 }
