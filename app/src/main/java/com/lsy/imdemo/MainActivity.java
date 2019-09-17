@@ -134,10 +134,7 @@ public class MainActivity extends BaseActivity {
 
         EchoWebSocketListener listener = new EchoWebSocketListener();
         Request request = new Request.Builder()
-//                .url("ws://192.168.0.32:8086/select")
-//                .url("ws://172.16.2.65:8082")
-                .url("ws://172.16.2.65:9080/ws")
-//                .url("ws://47.52.78.196:9080/ws")
+                .url(BuildConfig.IS_ONLINE ? BuildConfig.ONLINE_URL : BuildConfig.LOCAL_URL)
                 .addHeader("name", name)
                 .addHeader("id", id)
                 .build();

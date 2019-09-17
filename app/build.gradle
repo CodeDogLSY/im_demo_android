@@ -8,12 +8,29 @@ android {
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
+        buildConfigField("boolean", "IS_ONLINE", rootProject.properties['IS_ONLINE'])
+        buildConfigField("String", "ONLINE_URL", rootProject.properties['ONLINE_URL'])
+        buildConfigField("String", "LOCAL_URL", rootProject.properties['LOCAL_URL'])
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        mConfig {
+            storeFile file("${rootDir}/URH.jks")
+            storePassword rootProject.properties['KEYSTORE_PASSWORD']
+            keyAlias rootProject.properties['KEYSTORE_ALIAS']
+            keyPassword rootProject.properties['KEYSTORE_KEY_PASSWORD']
+        }
     }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.mConfig
+        }
+        debug {
+            minifyEnabled false
+            signingConfig signingConfigs.mConfig
         }
     }
 }
