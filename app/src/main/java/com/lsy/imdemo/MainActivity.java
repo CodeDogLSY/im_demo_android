@@ -1,5 +1,7 @@
 package com.lsy.imdemo;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -39,6 +41,7 @@ public class MainActivity extends BaseActivity {
     private TagAdapter mAdapter;
     private List<UserBean> list = new ArrayList<>();
     private LayoutInflater mInflater;
+    private String currentId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +69,8 @@ public class MainActivity extends BaseActivity {
             public void onClick(View v) {
                 String name = StrUtil.getRandomName();
                 tv_name.setText(String.format("当前用户:%s", name));
-                connect(name, StrUtil.getRandomId());
+                currentId = StrUtil.getRandomId();
+                connect(name, currentId);
             }
         });
 
@@ -118,6 +122,14 @@ public class MainActivity extends BaseActivity {
                 UserBean userBean = list.get(select.iterator().next());
                 msgBean.toid = userBean.id;
                 msgBean.toname = userBean.name;
+                if (userBean.id.equals(currentId)) {
+                    output(String.format("你对自己说：%s", msgBean.content));
+                    return;
+                } else {
+                    output(String.format("你对%s 说：%s", userBean.name, msgBean.content));
+                }
+            } else {
+                output(String.format("你对大家说：%s", msgBean.content));
             }
             boolean isSend = mWebSocket.send(new Gson().toJson(msgBean));
             if (isSend) {
@@ -217,11 +229,14 @@ public class MainActivity extends BaseActivity {
                 case 1:
                     MsgBean msgBean = new Gson().fromJson(content, MsgBean.class);
                     if (TextUtils.isEmpty(msgBean.toid)) {
-                        output(String.format("%s 说：%s", msgBean.fromname, msgBean.content));
+                        if (msgBean.fromid.equals(currentId)) {
+                            return;
+                        } else {
+                            output(String.format("%s 对大家说：%s", msgBean.fromname, msgBean.content));
+                        }
                     } else {
                         output(String.format("%s 对你说：%s", msgBean.fromname, msgBean.content));
                     }
-
                     break;
                 case 2:
                     List<UserBean> listData = new Gson().fromJson(content, new TypeToken<List<UserBean>>() {
@@ -246,4 +261,20 @@ public class MainActivity extends BaseActivity {
         });
     }
 
+    @Override
+    public void onBackPressed() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("确认退出?")
+                .setPositiveButton("退出", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                }).setNegativeButton("取消", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        }).show();
+    }
 }
